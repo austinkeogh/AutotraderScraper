@@ -56,19 +56,30 @@ def get_results(url):
         print("Error getting the listings")
         raise
     for listing in listings:
+        title = listing.find_all('h2', attrs={'class': 'listing-title'})
         details = listing.find_all('ul', attrs={'class': 'listing-key-specs'})
         costs = listing.find_all('div', attrs={'class': 'vehicle-price'})
         descriptions = listing.find_all('p', attrs={'class': 'listing-description'})
-        for detail, cost, description in zip (details, costs, descriptions):
-            write_to_file("\n - \n")
+        more_descriptions = listing.find_all('p', attrs={'class': 'listing-attention-grabber'})
+        for title, detail, cost, description, more_description in zip (title, details, costs, descriptions, more_descriptions):
+            write_to_file("\n --- \n")
+            write_to_file(title.get_text())
+            write_to_file(" - \n")
+            write_to_file("Details: \n")
             write_to_file(detail.get_text())
+            write_to_file(" - \n")
+            write_to_file("Cost: \n")
             write_to_file(cost.get_text())
-            write_to_file("\n")
+            write_to_file("\n - \n")
+            write_to_file("Description: \n")
             write_to_file(description.get_text())
             write_to_file("\n - \n")
+            write_to_file("Attention Grabber: \n")
+            write_to_file(more_description.get_text())
+            write_to_file("\n --- \n")
 
-print ('###### AutoTrader Scraping Tool')
-print ('##########################################################################\n')
+print ('AutoTrader Scraping Tool')
+print ('##########################\n')
 for x in range (1, 15):
     get_results(urlx + str(x))
 print(text_file)

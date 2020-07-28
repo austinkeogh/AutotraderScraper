@@ -3,6 +3,7 @@ import urllib.request
 import csv
 from bs4 import BeautifulSoup
 import re
+import itertools
 import pandas as pd
 
 text_file = open("Autotrader scraping.txt", 'w')
@@ -47,7 +48,6 @@ def get_pages(url):
 def txt_to_csv():
     text_file = open("Autotrader scraping.txt", 'r')
     read_file = pd.read_csv(text_file, delimiter='\n')
-    print(read_file)
     read_file.to_csv(csv_file)
     csv_file.close()
     text_file.close()
@@ -66,51 +66,56 @@ def write_to_file(data):
 
 
 def write_to_csv(csvData):  # notfinished
-    with open('test.csv', 'w') as csvFile:
-        writer = csv.writer(csvFile)
-        writer.writerow(csvData)
-        print(csvData)
+    with open('directCSVwrite.csv', 'a') as csvFile:
+        writer1 = csv.writer(csvFile)
+        writer1.writerow(csvData)
     csvFile.close()
 
 
 def get_results(url):
     soup = bs_setup(url)
+    cars = []
+    titles = soup.find_all('h2', attrs={'class': 'listing-title'})
+    details = soup.find_all('ul', attrs={'class': 'listing-key-specs'})
+    costs = soup.find_all('div', attrs={'class': 'vehicle-price'})
+    descriptions = soup.find_all('p', attrs={'class': 'listing-description'})
+    atten_grabbers = soup.find_all('p', attrs={'class': 'listing-attention-grabber'})
+    for i, (title, detail, cost, description, atten_grabber) in enumerate(zip(titles, details, costs, descriptions, atten_grabbers)):
+        cars.append([(title.get_text("|", strip=True)), (detail.get_text("|", strip=True)), (cost.get_text("|", strip=True)), (description.get_text("|", strip=True)), (atten_grabber.get_text("|", strip=True))])
+        write_to_csv(cars[i])
 
-    try:
-        listings = soup.find_all('div', attrs={'class': 'js-search-results'})
-    except:
-        print("Error getting the listings")
-        raise
-    for listing in listings:
-        title = listing.find_all('h2', attrs={'class': 'listing-title'})
-        details = listing.find_all('ul', attrs={'class': 'listing-key-specs'})
-        costs = listing.find_all('div', attrs={'class': 'vehicle-price'})
-        descriptions = listing.find_all('p', attrs={'class': 'listing-description'})
-        atten_grabbers = listing.find_all('p', attrs={'class': 'listing-attention-grabber'})
-        for title, detail, cost, description, atten_grabber in zip(title, details, costs, descriptions, atten_grabbers):
-            write_to_file("\n --- \n")
-            write_to_file("Title: ")
-            write_to_file(title.get_text())
-            write_to_file(" - \n")
-            write_to_file("Details: \n")
-            write_to_file(detail.get_text())
-            write_to_file(" - \n")
-            write_to_file("Cost: \n")
-            write_to_file(cost.get_text())
-            write_to_file("\n - \n")
-            write_to_file("Description: \n")
-            write_to_file(description.get_text())
-            write_to_file("\n - \n")
-            write_to_file("Attention Grabber: \n")
-            write_to_file(atten_grabber.get_text())
-            write_to_file("\n --- \n")
+    # res = [list(itertools.chain(*i)) for i in zip(titles, details, costs, descriptions, atten_grabbers)]
+    # for s in res:
+    #     print(*s)
+
+    for title, detail, cost, description, atten_grabber in zip(titles, details, costs, descriptions, atten_grabbers):
+        write_to_file("\n --- \n")
+        write_to_file("Title: ")
+        write_to_file(title.get_text())
+        write_to_file(" - \n")
+        write_to_file("Details: \n")
+        write_to_file(detail.get_text())
+        write_to_file(" - \n")
+        write_to_file("Cost: \n")
+        write_to_file(cost.get_text())
+        write_to_file("\n - \n")
+        write_to_file("Description: \n")
+        write_to_file(description.get_text())
+        write_to_file("\n - \n")
+        write_to_file("Attention Grabber: \n")
+        write_to_file(atten_grabber.get_text())
+        write_to_file("\n --- \n")
 
 
 print('AutoTrader Scraping Tool')
 print('##########################\n')
+
 url = url_constructor()
+
 pagination_value = get_pages(url)
+
 for x in range(1, pagination_value):
     get_results(url + str(x))
+
 text_file.close()
 txt_to_csv()

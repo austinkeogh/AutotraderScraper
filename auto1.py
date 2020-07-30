@@ -3,6 +3,11 @@ import urllib.request
 from bs4 import BeautifulSoup
 import re
 import pandas as pd
+from flask import Flask
+from example_blueprint import example_blueprint
+
+app = Flask(__name__)
+app.register_blueprint(example_blueprint)
 
 make = 'Tesla'
 model = 'Model S'
@@ -44,27 +49,64 @@ def get_pages(url):
 
 
 def write_csv(data, filename):
+    print("Writing results to CSV file...")
     pd.DataFrame(data, columns = ["Title", "Details", "Cost", "Descriptions", "Attention Grabber"]).to_csv(filename, index=True)
 
 
-def get_results(url):
-    soup = bs_setup(url)
-    titles = soup.find_all('h2', attrs={'class': 'listing-title'})
-    details = soup.find_all('ul', attrs={'class': 'listing-key-specs'})
-    costs = soup.find_all('div', attrs={'class': 'vehicle-price'})
-    descriptions = soup.find_all('p', attrs={'class': 'listing-description'})
-    atten_grabbers = soup.find_all('p', attrs={'class': 'listing-attention-grabber'})
-    for i, (title, detail, cost, description, atten_grabber) in enumerate(zip(titles, details, costs, descriptions, atten_grabbers)):
-        car_results.append([(title.get_text("|", strip=True)), (detail.get_text("|", strip=True)), (cost.get_text()), (description.get_text("|", strip=True)), (atten_grabber.get_text("|", strip=True))])
+def get_results(url, pages):
+    print("Parsing results...\n")
+    l = pages
+    printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=50)
+    for x in range(1, pages):
+        soup = bs_setup(url + str(x))
+        titles = soup.find_all('h2', attrs={'class': 'listing-title'})
+        details = soup.find_all('ul', attrs={'class': 'listing-key-specs'})
+        costs = soup.find_all('div', attrs={'class': 'vehicle-price'})
+        descriptions = soup.find_all('p', attrs={'class': 'listing-description'})
+        atten_grabbers = soup.find_all('p', attrs={'class': 'listing-attention-grabber'})
+        printProgressBar(x + 1, l, prefix='Progress:', suffix='Complete', length=50)
+        for i, (title, detail, cost, description, atten_grabber) in enumerate(zip(titles, details, costs, descriptions, atten_grabbers)):
+            car_results.append([(title.get_text("|", strip=True)), (detail.get_text("|", strip=True)), (cost.get_text()), (description.get_text("|", strip=True)), (atten_grabber.get_text("|", strip=True))])
 
-print('AutoTrader Scraping Tool')
-print('##########################\n')
 
-url = url_constructor()
-pagination_value = get_pages(url)
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total:
+        print()
 
-for x in range(1, pagination_value):
-    get_results(url + str(x))
 
-write_csv(car_results, "file.csv")
-print('##########################\n')
+def main():
+    """
+    MAIN... the final maintear, these are the voyages of the mainship mainterprise, its maintaing mission...
+    """
+    print('AutoTrader Scraping Tool\n')
+    print('##########################\n')
+
+    built_url = url_constructor()
+    pagination_value = get_pages(built_url)
+    get_results(built_url, pagination_value)
+
+    write_csv(car_results, "file.csv")
+    print("complete!\n")
+    print('##########################\n')
+
+
+if __name__ == "__main__":
+    main()
+

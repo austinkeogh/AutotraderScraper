@@ -5,13 +5,17 @@ import re
 import pandas as pd
 from flask import Flask
 from example_blueprint import example_blueprint
+from datetime import date
+import os
 
 app = Flask(__name__)
 app.register_blueprint(example_blueprint)
 
+######## Add the make and model specified here ########
 make = 'Tesla'
-model = 'Model S'
+model = 'model s'
 car_results = []
+########################################################
 
 def url_constructor():
     start = "https://www.autotrader.co.uk/car-search?sort=sponsored&radius=1500&"
@@ -43,7 +47,7 @@ def get_pages(url):
         num_of_pages = re.search('(\d+)(?!.*\d)', search_string).group(1)
         print(num_of_pages + " pages of results...\n")
     except:
-        print("Error getting the listings")
+        print("Error getting the number of pages")
         raise
     return int(num_of_pages)
 
@@ -98,11 +102,19 @@ def main():
     print('AutoTrader Scraping Tool\n')
     print('##########################\n')
 
+    today = date.today()
+    # dd/mm/YY
+    d1 = today.strftime("%d/%m/%Y")
+    print("d1 =", d1)
+    print(make, model)
+    filename = (make + "_" + model + "_" + d1 + ".csv")
+    print(filename)
     built_url = url_constructor()
     pagination_value = get_pages(built_url)
     get_results(built_url, pagination_value)
 
     write_csv(car_results, "file.csv")
+    os.rename(r'file.csv', r'file'+(str(date.today()) + '.csv'))
     print("complete!\n")
     print('##########################\n')
 
